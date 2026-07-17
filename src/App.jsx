@@ -1,62 +1,68 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
+  BrowserRouter, Routes, Route, Link, useNavigate, useParams, useLocation,
+} from "react-router-dom";
+import {
   Home, Briefcase, BookOpen, Mail, Lock, Sun, Moon, Github, Linkedin,
   MessageCircle, Menu, X, Plus, Pencil, Trash2, Search,
   Calendar, User, Settings as SettingsIcon, Send,
   LogOut, Eye, EyeOff, Bold, Italic, List as ListIcon, ArrowRight, Download,
   ExternalLink, Check, AlertCircle, Wifi, Volume2, BatteryFull, ArrowLeft,
   MessageSquare, LayoutDashboard, FileText, Users, Twitter, Phone,
-  ShieldCheck, Underline as UnderlineIcon
+  ShieldCheck, Underline as UnderlineIcon, Sparkles, Award, Clock, Zap
 } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
 import { supabase } from "./supabaseClient";
 
 /* ============================================================================
-   PAULO MKENYA — SYSTEMS PORTFOLIO (Supabase-backed, deployable build)
-   Same "Console" design system as the demo, but every read/write now goes to
-   a real Postgres database via Supabase, and admin login uses real Supabase
-   Auth instead of a hardcoded password.
+   PAULO MKENYA — SYSTEMS PORTFOLIO (Supabase-backed, real routing)
+   "The Console" design system: the site presents itself as Paulo's own
+   dashboard, since he builds management systems for schools, hospitals,
+   farms and shops. Real URLs per page now (react-router-dom) for proper
+   navigation, shareable links, and per-page SEO.
 ============================================================================ */
 
 const FONT_IMPORT_URL =
-  "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap";
+  "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap";
 
 const THEME = {
   dark: {
-    bg: "#0A0E18",
+    bg: "#090C15",
     bgImage:
-      "radial-gradient(ellipse 80% 50% at 20% -10%, rgba(232,163,61,0.10), transparent), radial-gradient(ellipse 60% 40% at 90% 0%, rgba(47,191,159,0.10), transparent), linear-gradient(180deg,#0A0E18 0%, #0D1220 50%, #0A0E18 100%)",
-    panel: "rgba(19,24,38,0.72)",
+      "radial-gradient(ellipse 70% 45% at 15% -10%, rgba(232,163,61,0.14), transparent), radial-gradient(ellipse 55% 40% at 95% 5%, rgba(47,191,159,0.12), transparent), radial-gradient(ellipse 50% 40% at 50% 110%, rgba(124,92,255,0.08), transparent), linear-gradient(180deg,#090C15 0%, #0C0F1C 50%, #090C15 100%)",
+    panel: "rgba(19,24,38,0.68)",
     panelSolid: "#131826",
     border: "rgba(255,255,255,0.09)",
-    borderStrong: "rgba(255,255,255,0.16)",
+    borderStrong: "rgba(255,255,255,0.18)",
     text: "#EDEFF5",
     textMuted: "#8B93A7",
     textFaint: "#5D6478",
     accent: "#E8A33D",
     accent2: "#2FBF9F",
+    accent3: "#8C7CFF",
     danger: "#E2574C",
-    dockBg: "rgba(13,17,28,0.75)",
+    dockBg: "rgba(10,13,22,0.7)",
     inputBg: "rgba(255,255,255,0.04)",
-    shadow: "0 20px 60px -20px rgba(0,0,0,0.6)",
+    shadow: "0 24px 70px -24px rgba(0,0,0,0.65)",
   },
   light: {
-    bg: "#F6F4EE",
+    bg: "#F7F5EF",
     bgImage:
-      "radial-gradient(ellipse 80% 50% at 20% -10%, rgba(201,127,30,0.08), transparent), radial-gradient(ellipse 60% 40% at 90% 0%, rgba(28,138,115,0.08), transparent), linear-gradient(180deg,#F8F6F0 0%, #F1EEE5 50%, #F6F4EE 100%)",
-    panel: "rgba(255,255,255,0.75)",
+      "radial-gradient(ellipse 70% 45% at 15% -10%, rgba(201,127,30,0.10), transparent), radial-gradient(ellipse 55% 40% at 95% 5%, rgba(28,138,115,0.09), transparent), radial-gradient(ellipse 50% 40% at 50% 110%, rgba(108,79,224,0.06), transparent), linear-gradient(180deg,#F9F7F1 0%, #F2EFE6 50%, #F7F5EF 100%)",
+    panel: "rgba(255,255,255,0.72)",
     panelSolid: "#FFFFFF",
     border: "rgba(20,20,20,0.08)",
-    borderStrong: "rgba(20,20,20,0.14)",
+    borderStrong: "rgba(20,20,20,0.15)",
     text: "#1A1D26",
     textMuted: "#6B7280",
     textFaint: "#9CA3AF",
     accent: "#B9791A",
     accent2: "#1C8A73",
+    accent3: "#6C4FE0",
     danger: "#C8433A",
-    dockBg: "rgba(255,255,255,0.75)",
+    dockBg: "rgba(255,255,255,0.72)",
     inputBg: "rgba(0,0,0,0.03)",
-    shadow: "0 20px 60px -25px rgba(0,0,0,0.25)",
+    shadow: "0 24px 70px -28px rgba(0,0,0,0.22)",
   },
 };
 
@@ -75,6 +81,14 @@ const T = {
       available: "Ninapatikana kwa miradi mipya",
     },
     status: { years: "Miaka ya Uzoefu", projects: "Miradi Imekamilika", clients: "Wateja Waliridhika", uptime: "Utayari" },
+    why: {
+      eyebrow: "kwanini.txt", title: "Kwa Nini Unifanye Kazi Nami",
+      items: [
+        { t: "Mifumo Inayofanya Kazi Kweli", d: "Sijengi maonyesho tu — kila mfumo ninaotoa unatumika kila siku na taasisi halisi." },
+        { t: "Mawasiliano ya Wazi", d: "Utapata taarifa za maendeleo ya mradi wako mara kwa mara, bila kusubiri kwa muda mrefu." },
+        { t: "Msaada Baada ya Kukamilisha", d: "Sikuachi baada ya kukabidhi — ninatoa msaada wa kiufundi hata baada ya mradi kukamilika." },
+      ],
+    },
     about: {
       eyebrow: "kuhusu.txt", title: "Kunihusu",
       role: "Full-Stack Developer • Mtatuzi wa Matatizo • Mpenzi wa Teknolojia",
@@ -109,7 +123,7 @@ const T = {
     admin: {
       loginEyebrow: "admin/ingia", loginTitle: "Ingia Admin", username: "Barua pepe", password: "Nenosiri",
       login: "Ingia", loginHint: "Tumia barua pepe/nenosiri uliyoyaunda kwenye Supabase > Authentication > Users.",
-      invalid: "Barua pepe au nenosiri sio sahihi.",
+      invalid: "Barua pepe au nenosiri sio sahihi, au akaunti haijathibitishwa (angalia 'Auto Confirm User' kwenye Supabase).",
       welcome: "Karibu", logout: "Toka",
       tabs: { analytics: "Muhtasari", projects: "Miradi", posts: "Blogu", messages: "Ujumbe", settings: "Mipangilio" },
       stats: { visitors: "Watembeleaji", projects: "Miradi", posts: "Machapisho", published: "Yaliyochapishwa", messages: "Ujumbe", unread: "Bado Kusomwa" },
@@ -126,7 +140,7 @@ const T = {
       contactInfo: "Taarifa za Mawasiliano", emailField: "Barua pepe", phoneField: "Namba ya Simu",
       whatsappField: "Namba ya WhatsApp", githubField: "Kiungo cha GitHub", linkedinField: "Kiungo cha LinkedIn",
       twitterField: "Kiungo cha X/Twitter", seoTitle: "Kichwa cha SEO", seoDesc: "Maelezo ya SEO",
-      saved: "Mipangilio imehifadhiwa.", securityNote: "Admin sasa inatumia Supabase Auth halisi — tengeneza mtumiaji kwenye dashibodi ya Supabase kabla ya kuingia.",
+      saved: "Mipangilio imehifadhiwa.", securityNote: "Admin sasa inatumia Supabase Auth halisi — tengeneza mtumiaji kwenye dashibodi ya Supabase kabla ya kuingia (hakikisha 'Auto Confirm User' iko ON).",
       addNew: "Ongeza Mpya",
     },
     common: { close: "Funga", required: "Sehemu hii inahitajika.", invalidEmail: "Barua pepe si sahihi.", loading: "Inapakia..." },
@@ -141,6 +155,14 @@ const T = {
       available: "Available for new projects",
     },
     status: { years: "Years Experience", projects: "Projects Completed", clients: "Happy Clients", uptime: "Availability" },
+    why: {
+      eyebrow: "why.txt", title: "Why Work With Me",
+      items: [
+        { t: "Systems That Actually Work", d: "I don't just build demos — every system I ship is used daily by real institutions." },
+        { t: "Clear Communication", d: "You'll get regular updates on your project's progress, no long silences." },
+        { t: "Support After Delivery", d: "I don't disappear after handoff — ongoing technical support is part of the deal." },
+      ],
+    },
     about: {
       eyebrow: "about.txt", title: "About Me",
       role: "Full-Stack Developer • Problem Solver • Tech Enthusiast",
@@ -175,7 +197,7 @@ const T = {
     admin: {
       loginEyebrow: "admin/login", loginTitle: "Admin Login", username: "Email", password: "Password",
       login: "Log In", loginHint: "Use the email/password you created in Supabase > Authentication > Users.",
-      invalid: "Incorrect email or password.",
+      invalid: "Incorrect email or password, or the account isn't confirmed yet (check 'Auto Confirm User' in Supabase).",
       welcome: "Welcome", logout: "Log Out",
       tabs: { analytics: "Overview", projects: "Projects", posts: "Blog", messages: "Messages", settings: "Settings" },
       stats: { visitors: "Visitors", projects: "Projects", posts: "Posts", published: "Published", messages: "Messages", unread: "Unread" },
@@ -192,7 +214,7 @@ const T = {
       contactInfo: "Contact Information", emailField: "Email", phoneField: "Phone Number",
       whatsappField: "WhatsApp Number", githubField: "GitHub URL", linkedinField: "LinkedIn URL",
       twitterField: "X/Twitter URL", seoTitle: "SEO Title", seoDesc: "SEO Description",
-      saved: "Settings saved.", securityNote: "Admin now uses real Supabase Auth — create a user in the Supabase dashboard before logging in.",
+      saved: "Settings saved.", securityNote: "Admin now uses real Supabase Auth — create a user in the Supabase dashboard before logging in (make sure 'Auto Confirm User' is ON).",
       addNew: "Add New",
     },
     common: { close: "Close", required: "This field is required.", invalidEmail: "Invalid email address.", loading: "Loading..." },
@@ -217,8 +239,6 @@ const JOURNEY = [
 
 const CATS = ["Web", "Mobile"];
 
-function cx(...a) { return a.filter(Boolean).join(" "); }
-
 function sanitizeHTML(html) {
   if (!html) return "";
   return html
@@ -230,7 +250,6 @@ function sanitizeHTML(html) {
 
 function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v); }
 
-/* Map DB settings row (flat, snake_case) <-> UI settings object (nested {sw,en}) */
 function rowToSettings(row) {
   if (!row) return null;
   return {
@@ -258,16 +277,56 @@ function settingsToRow(s) {
   };
 }
 
+/* ------------------------------ SEO + REVEAL UTILS ------------------------------ */
+function Seo({ title, description }) {
+  useEffect(() => {
+    if (title) document.title = title;
+    if (description) {
+      let tag = document.querySelector('meta[name="description"]');
+      if (!tag) {
+        tag = document.createElement("meta");
+        tag.setAttribute("name", "description");
+        document.head.appendChild(tag);
+      }
+      tag.setAttribute("content", description);
+    }
+  }, [title, description]);
+  return null;
+}
+
+function Reveal({ children, delay = 0 }) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setVisible(true); io.disconnect(); }
+    }, { threshold: 0.12 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <div ref={ref} style={{
+      opacity: visible ? 1 : 0,
+      transform: visible ? "translateY(0)" : "translateY(18px)",
+      transition: `opacity .6s ease ${delay}ms, transform .6s ease ${delay}ms`,
+    }}>
+      {children}
+    </div>
+  );
+}
+
 /* ------------------------------ SMALL UI ATOMS ------------------------------ */
 function WindowChrome({ theme, title, icon, children, style, bodyStyle, dots = true }) {
   return (
     <div style={{
-      background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 16,
-      backdropFilter: "blur(16px)", boxShadow: theme.shadow, overflow: "hidden", ...style,
+      background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 18,
+      backdropFilter: "blur(18px)", boxShadow: theme.shadow, overflow: "hidden", ...style,
     }}>
       <div style={{
-        display: "flex", alignItems: "center", gap: 10, padding: "10px 16px",
-        borderBottom: `1px solid ${theme.border}`, background: "rgba(0,0,0,0.08)",
+        display: "flex", alignItems: "center", gap: 10, padding: "11px 18px",
+        borderBottom: `1px solid ${theme.border}`, background: "rgba(0,0,0,0.10)",
       }}>
         {dots && (
           <div style={{ display: "flex", gap: 6 }}>
@@ -280,13 +339,13 @@ function WindowChrome({ theme, title, icon, children, style, bodyStyle, dots = t
           {icon} {title}
         </span>
       </div>
-      <div style={{ padding: 20, ...bodyStyle }}>{children}</div>
+      <div style={{ padding: 22, ...bodyStyle }}>{children}</div>
     </div>
   );
 }
 
 function Chip({ theme, children, tone = "default", active, onClick, small }) {
-  const toneColor = tone === "accent" ? theme.accent : tone === "accent2" ? theme.accent2 : theme.textMuted;
+  const toneColor = tone === "accent" ? theme.accent : tone === "accent2" ? theme.accent2 : tone === "accent3" ? theme.accent3 : theme.textMuted;
   return (
     <button
       onClick={onClick}
@@ -302,43 +361,34 @@ function Chip({ theme, children, tone = "default", active, onClick, small }) {
   );
 }
 
-function PrimaryButton({ theme, children, onClick, icon: Icon, type = "button", full, style, disabled }) {
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-        padding: "12px 22px", borderRadius: 12, border: "none", cursor: disabled ? "not-allowed" : "pointer",
-        fontFamily: FONT_BODY, fontWeight: 600, fontSize: 14.5, color: "#0A0E18",
-        background: `linear-gradient(135deg, ${theme.accent}, ${theme.accent2})`,
-        width: full ? "100%" : "auto", boxShadow: `0 8px 24px -8px ${theme.accent}66`,
-        opacity: disabled ? 0.6 : 1, transition: "transform .15s", ...style,
-      }}
-    >
-      {Icon && <Icon size={16} />} {children}
-    </button>
-  );
+function PrimaryButton({ theme, children, onClick, icon: Icon, type = "button", full, style, disabled, as: As = "button", to }) {
+  const common = {
+    style: {
+      display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+      padding: "13px 24px", borderRadius: 13, border: "none", cursor: disabled ? "not-allowed" : "pointer",
+      fontFamily: FONT_BODY, fontWeight: 700, fontSize: 14.5, color: "#0A0E18",
+      background: `linear-gradient(135deg, ${theme.accent}, ${theme.accent2})`,
+      width: full ? "100%" : "auto", boxShadow: `0 10px 28px -10px ${theme.accent}77`,
+      opacity: disabled ? 0.6 : 1, transition: "transform .15s, box-shadow .15s", ...style,
+    },
+    onMouseEnter: (e) => { e.currentTarget.style.transform = "translateY(-2px)"; },
+    onMouseLeave: (e) => { e.currentTarget.style.transform = "translateY(0)"; },
+  };
+  if (As === Link) return <Link to={to} {...common}>{Icon && <Icon size={16} />} {children}</Link>;
+  return <button type={type} onClick={onClick} disabled={disabled} {...common}>{Icon && <Icon size={16} />} {children}</button>;
 }
 
-function GhostButton({ theme, children, onClick, icon: Icon, type = "button", full, danger }) {
-  return (
-    <button
-      type={type}
-      onClick={onClick}
-      style={{
-        display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
-        padding: "12px 22px", borderRadius: 12, cursor: "pointer",
-        fontFamily: FONT_BODY, fontWeight: 600, fontSize: 14.5,
-        color: danger ? theme.danger : theme.text,
-        background: "transparent", border: `1.5px solid ${danger ? theme.danger : theme.borderStrong}`,
-        width: full ? "100%" : "auto",
-      }}
-    >
-      {Icon && <Icon size={16} />} {children}
-    </button>
-  );
+function GhostButton({ theme, children, onClick, icon: Icon, type = "button", full, danger, as: As = "button", to }) {
+  const style = {
+    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+    padding: "12px 22px", borderRadius: 13, cursor: "pointer",
+    fontFamily: FONT_BODY, fontWeight: 600, fontSize: 14.5,
+    color: danger ? theme.danger : theme.text,
+    background: "transparent", border: `1.5px solid ${danger ? theme.danger : theme.borderStrong}`,
+    width: full ? "100%" : "auto",
+  };
+  if (As === Link) return <Link to={to} style={style}>{Icon && <Icon size={16} />} {children}</Link>;
+  return <button type={type} onClick={onClick} style={style}>{Icon && <Icon size={16} />} {children}</button>;
 }
 
 function Field({ theme, label, children }) {
@@ -437,6 +487,31 @@ function RichTextEditor({ theme, value, onChange }) {
   );
 }
 
+/* Richer project preview: a tiny fake "dashboard" UI instead of a flat glyph block */
+function ProjectMockup({ theme, color, icon }) {
+  return (
+    <div style={{ padding: 14, height: 110, display: "flex", flexDirection: "column", gap: 6, background: `linear-gradient(160deg, ${color}14, transparent)` }}>
+      <div style={{ display: "flex", gap: 6, height: "100%" }}>
+        <div style={{ width: "28%", borderRadius: 6, background: `${color}26`, border: `1px solid ${color}3a`, display: "flex", flexDirection: "column", gap: 4, padding: 6 }}>
+          {[0, 1, 2].map((i) => <div key={i} style={{ height: 5, borderRadius: 3, background: `${color}55`, width: i === 0 ? "80%" : "60%" }} />)}
+        </div>
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 5 }}>
+          <div style={{ display: "flex", gap: 5 }}>
+            {[0, 1, 2].map((i) => (
+              <div key={i} style={{ flex: 1, height: 26, borderRadius: 6, background: `${color}1c`, border: `1px solid ${color}30` }} />
+            ))}
+          </div>
+          <div style={{ flex: 1, borderRadius: 6, background: `${color}14`, border: `1px solid ${color}28`, display: "flex", alignItems: "flex-end", padding: 6, gap: 3 }}>
+            {[40, 65, 30, 80, 55, 70].map((h, i) => (
+              <div key={i} style={{ width: 6, height: `${h}%`, borderRadius: 2, background: `${color}66` }} />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ProjectGlyph({ icon, color }) {
   return (
     <div style={{
@@ -449,22 +524,28 @@ function ProjectGlyph({ icon, color }) {
   );
 }
 
-/* ================================ MAIN APP ================================ */
+/* ================================ ROOT APP ================================ */
 export default function App() {
+  return (
+    <BrowserRouter>
+      <AppInner />
+    </BrowserRouter>
+  );
+}
+
+function AppInner() {
   const [lang, setLang] = useState("sw");
   const [mode, setMode] = useState("dark");
-  const [page, setPage] = useState("home");
   const [mobileNav, setMobileNav] = useState(false);
   const [clock, setClock] = useState(new Date());
   const [toast, setToast] = useState(null);
+  const location = useLocation();
 
   const [projects, setProjects] = useState([]);
   const [posts, setPosts] = useState([]);
   const [messages, setMessages] = useState([]);
   const [settings, setSettings] = useState(null);
   const [loaded, setLoaded] = useState(false);
-
-  const [activePostId, setActivePostId] = useState(null);
 
   const [session, setSession] = useState(null);
   const isAdmin = !!session;
@@ -478,14 +559,12 @@ export default function App() {
     setTimeout(() => setToast(null), 3200);
   }, []);
 
-  /* Auth session */
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setSession(data.session));
     const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => setSession(sess));
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  /* Initial public data load + visitor counter */
   useEffect(() => {
     (async () => {
       const [{ data: p }, { data: po }, { data: s }] = await Promise.all([
@@ -505,7 +584,6 @@ export default function App() {
     })();
   }, []);
 
-  /* Fetch messages once admin logs in (RLS only allows authenticated reads) */
   useEffect(() => {
     if (!isAdmin) { setMessages([]); return; }
     supabase.from("messages").select("*").order("created_at", { ascending: false }).then(({ data }) => setMessages(data || []));
@@ -516,11 +594,8 @@ export default function App() {
     return () => clearInterval(iv);
   }, []);
 
-  useEffect(() => {
-    if (settings?.seoTitle) document.title = settings.seoTitle;
-  }, [settings?.seoTitle]);
+  useEffect(() => { window.scrollTo({ top: 0 }); setMobileNav(false); }, [location.pathname]);
 
-  /* ---------- CRUD helpers (each talks to Supabase, then patches local state) ---------- */
   const addProject = async (data) => {
     const { tech, id, ...rest } = data;
     const { data: row, error } = await supabase.from("projects").insert({ ...rest, tech }).select().single();
@@ -583,14 +658,12 @@ export default function App() {
     setSettings(next);
   };
 
-  const goto = (p) => { setPage(p); setMobileNav(false); window.scrollTo({ top: 0, behavior: "smooth" }); };
-
   const navItems = [
-    { key: "home", label: t.nav.home, icon: Home },
-    { key: "projects", label: t.nav.projects, icon: Briefcase },
-    { key: "blog", label: t.nav.blog, icon: BookOpen },
-    { key: "contact", label: t.nav.contact, icon: Mail },
-    { key: "admin", label: t.nav.admin, icon: SettingsIcon },
+    { key: "/", label: t.nav.home, icon: Home },
+    { key: "/projects", label: t.nav.projects, icon: Briefcase },
+    { key: "/blog", label: t.nav.blog, icon: BookOpen },
+    { key: "/contact", label: t.nav.contact, icon: Mail },
+    { key: "/admin", label: t.nav.admin, icon: SettingsIcon },
   ];
 
   return (
@@ -605,60 +678,59 @@ export default function App() {
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-thumb { background: ${theme.border}; border-radius: 8px; }
         [contenteditable]:focus { outline: none; box-shadow: 0 0 0 2px ${theme.accent}55; border-radius: 10px; }
-        a { color: inherit; }
+        a { color: inherit; text-decoration: none; }
         @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
         @keyframes pulseDot { 0%,100%{opacity:1} 50%{opacity:.35} }
         @keyframes fadeSlide { from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)} }
+        @keyframes floatOrb { 0%,100%{ transform: translate(0,0) } 50%{ transform: translate(14px,-18px) } }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .fade-in { animation: fadeSlide .5s ease both; }
       `}</style>
 
       <TopBar theme={theme} mode={mode} setMode={setMode} lang={lang} setLang={setLang}
         clock={clock} mobileNav={mobileNav} setMobileNav={setMobileNav} />
 
-      <div style={{ display: "flex", maxWidth: 1400, margin: "0 auto" }}>
-        <SideDock theme={theme} navItems={navItems} page={page} goto={goto} />
+      <div style={{ display: "flex", maxWidth: 1440, margin: "0 auto" }}>
+        <SideDock theme={theme} navItems={navItems} goto={() => {}} />
 
         {mobileNav && (
           <div style={{ position: "fixed", inset: 0, top: 56, background: theme.dockBg, backdropFilter: "blur(20px)", zIndex: 90, padding: 20 }}>
             {navItems.map((it) => (
-              <button key={it.key} onClick={() => goto(it.key)}
+              <Link key={it.key} to={it.key}
                 style={{
                   display: "flex", alignItems: "center", gap: 12, width: "100%", padding: "16px 14px",
-                  background: page === it.key ? `${theme.accent}18` : "transparent", border: "none",
-                  borderRadius: 12, marginBottom: 6, cursor: "pointer", color: page === it.key ? theme.accent : theme.text,
+                  background: location.pathname === it.key ? `${theme.accent}18` : "transparent",
+                  borderRadius: 12, marginBottom: 6, cursor: "pointer", color: location.pathname === it.key ? theme.accent : theme.text,
                   fontFamily: FONT_BODY, fontWeight: 600, fontSize: 16,
                 }}>
                 <it.icon size={20} /> {it.label}
-              </button>
+              </Link>
             ))}
           </div>
         )}
 
-        <main style={{ flex: 1, minWidth: 0, padding: "28px 20px 60px" }}>
+        <main style={{ flex: 1, minWidth: 0, padding: "28px 22px 60px" }}>
           {!loaded ? (
             <LoadingState theme={theme} t={t} />
-          ) : page === "home" ? (
-            <HomeView theme={theme} t={t} lang={lang} settings={settings} goto={goto} showToast={showToast} />
-          ) : page === "projects" ? (
-            <ProjectsView theme={theme} t={t} lang={lang} projects={projects} showToast={showToast} />
-          ) : page === "blog" ? (
-            activePostId ? (
-              <BlogPostView theme={theme} t={t} lang={lang} posts={posts} addComment={addComment}
-                postId={activePostId} onBack={() => setActivePostId(null)} />
-            ) : (
-              <BlogListView theme={theme} t={t} lang={lang} posts={posts} onOpen={(id) => setActivePostId(id)} />
-            )
-          ) : page === "contact" ? (
-            <ContactView theme={theme} t={t} lang={lang} settings={settings} addMessage={addMessage} showToast={showToast} />
-          ) : page === "admin" ? (
-            <AdminView theme={theme} t={t} lang={lang} isAdmin={isAdmin}
-              adminTab={adminTab} setAdminTab={setAdminTab}
-              projects={projects} addProject={addProject} updateProject={updateProject} deleteProject={deleteProject}
-              posts={posts} addPost={addPost} updatePost={updatePost} deletePost={deletePost}
-              messages={messages} markMessageRead={markMessageRead} deleteMessage={deleteMessage}
-              settings={settings} saveSettings={saveSettings}
-              showToast={showToast} />
-          ) : null}
+          ) : (
+            <Routes>
+              <Route path="/" element={<HomeView theme={theme} t={t} lang={lang} settings={settings} showToast={showToast} />} />
+              <Route path="/projects" element={<ProjectsView theme={theme} t={t} lang={lang} projects={projects} showToast={showToast} />} />
+              <Route path="/blog" element={<BlogListView theme={theme} t={t} lang={lang} posts={posts} />} />
+              <Route path="/blog/:id" element={<BlogPostView theme={theme} t={t} lang={lang} posts={posts} addComment={addComment} />} />
+              <Route path="/contact" element={<ContactView theme={theme} t={t} lang={lang} settings={settings} addMessage={addMessage} showToast={showToast} />} />
+              <Route path="/admin" element={
+                <AdminView theme={theme} t={t} lang={lang} isAdmin={isAdmin}
+                  adminTab={adminTab} setAdminTab={setAdminTab}
+                  projects={projects} addProject={addProject} updateProject={updateProject} deleteProject={deleteProject}
+                  posts={posts} addPost={addPost} updatePost={updatePost} deletePost={deletePost}
+                  messages={messages} markMessageRead={markMessageRead} deleteMessage={deleteMessage}
+                  settings={settings} saveSettings={saveSettings}
+                  showToast={showToast} />
+              } />
+              <Route path="*" element={<NotFound theme={theme} lang={lang} />} />
+            </Routes>
+          )}
 
           <Footer theme={theme} t={t} />
         </main>
@@ -669,11 +741,21 @@ export default function App() {
   );
 }
 
+function NotFound({ theme, lang }) {
+  return (
+    <div className="fade-in" style={{ textAlign: "center", padding: "80px 20px" }}>
+      <Seo title="404" />
+      <p style={{ fontFamily: FONT_MONO, fontSize: 60, color: theme.accent, margin: 0 }}>404</p>
+      <p style={{ color: theme.textMuted, marginBottom: 20 }}>{lang === "sw" ? "Ukurasa haukupatikana." : "Page not found."}</p>
+      <GhostButton theme={theme} as={Link} to="/" icon={Home}>{lang === "sw" ? "Rudi Nyumbani" : "Back Home"}</GhostButton>
+    </div>
+  );
+}
+
 function LoadingState({ theme, t }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "60vh", flexDirection: "column", gap: 12 }}>
       <div style={{ width: 36, height: 36, borderRadius: "50%", border: `3px solid ${theme.border}`, borderTopColor: theme.accent, animation: "spin 0.8s linear infinite" }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       <span style={{ fontFamily: FONT_MONO, fontSize: 13, color: theme.textMuted }}>{t.common.loading}</span>
     </div>
   );
@@ -688,14 +770,14 @@ function TopBar({ theme, mode, setMode, lang, setLang, clock, mobileNav, setMobi
       position: "sticky", top: 0, zIndex: 100, background: theme.dockBg, backdropFilter: "blur(16px)",
       borderBottom: `1px solid ${theme.border}`, padding: "10px 20px",
     }}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ maxWidth: 1440, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{
             width: 30, height: 30, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center",
             background: `linear-gradient(135deg, ${theme.accent}, ${theme.accent2})`, fontFamily: FONT_MONO, fontWeight: 700, color: "#0A0E18", fontSize: 13,
           }}>PM</div>
           <span style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 16, letterSpacing: -0.3 }}>Mkenya<span style={{ color: theme.accent }}>.</span></span>
-        </div>
+        </Link>
 
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ display: "flex", border: `1px solid ${theme.border}`, borderRadius: 99, padding: 3, gap: 2 }}>
@@ -739,27 +821,28 @@ function TopBar({ theme, mode, setMode, lang, setLang, clock, mobileNav, setMobi
 }
 
 /* --------------------------------- SIDE DOCK --------------------------------- */
-function SideDock({ theme, navItems, page, goto }) {
+function SideDock({ theme, navItems }) {
+  const location = useLocation();
   return (
     <>
       <aside className="side-dock" style={{
-        width: 84, flexShrink: 0, position: "sticky", top: 57, height: "calc(100vh - 57px)",
+        width: 88, flexShrink: 0, position: "sticky", top: 57, height: "calc(100vh - 57px)",
         borderRight: `1px solid ${theme.border}`, display: "flex", flexDirection: "column",
         alignItems: "center", paddingTop: 24, gap: 6, background: "rgba(0,0,0,0.03)",
       }}>
         {navItems.map((it) => {
-          const active = page === it.key;
+          const active = location.pathname === it.key;
           return (
-            <button key={it.key} onClick={() => goto(it.key)} title={it.label} style={{
-              width: 56, display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
-              padding: "10px 4px", borderRadius: 12, border: "none", cursor: "pointer",
+            <Link key={it.key} to={it.key} title={it.label} style={{
+              width: 60, display: "flex", flexDirection: "column", alignItems: "center", gap: 5,
+              padding: "10px 4px", borderRadius: 12,
               background: active ? `${theme.accent}1A` : "transparent",
               color: active ? theme.accent : theme.textMuted, position: "relative",
             }}>
               {active && <span style={{ position: "absolute", left: -12, top: "50%", transform: "translateY(-50%)", width: 3, height: 22, borderRadius: 3, background: theme.accent }} />}
               <it.icon size={19} />
               <span style={{ fontFamily: FONT_MONO, fontSize: 9.5 }}>{it.label}</span>
-            </button>
+            </Link>
           );
         })}
       </aside>
@@ -772,7 +855,7 @@ function SideDock({ theme, navItems, page, goto }) {
 }
 
 /* ==================================== HOME =================================== */
-function HomeView({ theme, t, lang, settings, goto, showToast }) {
+function HomeView({ theme, t, lang, settings, showToast }) {
   const [roleIdx, setRoleIdx] = useState(0);
   useEffect(() => {
     const iv = setInterval(() => setRoleIdx((i) => (i + 1) % t.hero.roles.length), 2400);
@@ -790,16 +873,21 @@ function HomeView({ theme, t, lang, settings, goto, showToast }) {
   };
 
   return (
-    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <WindowChrome theme={theme} icon="~/" title="hero.sh" style={{ padding: 0 }}>
-        <div style={{ padding: "44px 32px", display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 32, alignItems: "center" }} className="hero-grid">
+    <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+      <Seo title={settings.seoTitle} description={settings.seoDesc} />
+
+      {/* HERO */}
+      <WindowChrome theme={theme} icon="~/" title="hero.sh" style={{ padding: 0, position: "relative" }}>
+        <div aria-hidden style={{ position: "absolute", top: -60, right: -40, width: 220, height: 220, borderRadius: "50%", background: theme.accent, opacity: 0.16, filter: "blur(60px)", animation: "floatOrb 9s ease-in-out infinite" }} />
+        <div aria-hidden style={{ position: "absolute", bottom: -60, left: "30%", width: 200, height: 200, borderRadius: "50%", background: theme.accent2, opacity: 0.14, filter: "blur(60px)", animation: "floatOrb 11s ease-in-out infinite reverse" }} />
+        <div style={{ padding: "48px 32px", display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 32, alignItems: "center", position: "relative" }} className="hero-grid">
           <div>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 12px", borderRadius: 99, border: `1px solid ${theme.accent2}55`, background: `${theme.accent2}14`, marginBottom: 18 }}>
               <span style={{ width: 7, height: 7, borderRadius: 99, background: theme.accent2, animation: "pulseDot 1.6s infinite" }} />
               <span style={{ fontFamily: FONT_MONO, fontSize: 12, color: theme.accent2 }}>{t.hero.available}</span>
             </div>
             <p style={{ fontFamily: FONT_DISPLAY, fontSize: 20, color: theme.textMuted, margin: 0 }}>{t.hero.greet}</p>
-            <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: "clamp(38px, 6vw, 62px)", fontWeight: 700, margin: "4px 0 10px", lineHeight: 1.02, letterSpacing: -1 }}>
+            <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: "clamp(40px, 6.4vw, 66px)", fontWeight: 800, margin: "4px 0 10px", lineHeight: 1.0, letterSpacing: -1.5 }}>
               Paulo Mkenya<span style={{ color: theme.accent }}>.</span>
             </h1>
             <div style={{ height: 30, overflow: "hidden", marginBottom: 14 }}>
@@ -810,13 +898,13 @@ function HomeView({ theme, t, lang, settings, goto, showToast }) {
                 {"> "}{t.hero.roles[roleIdx]}
               </p>
             </div>
-            <p style={{ color: theme.textMuted, fontSize: 15.5, lineHeight: 1.7, maxWidth: 520, marginBottom: 26 }}>
+            <p style={{ color: theme.textMuted, fontSize: 16, lineHeight: 1.75, maxWidth: 520, marginBottom: 28 }}>
               {settings.heroTagline?.[lang] || t.hero.blurb}
             </p>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 22 }}>
-              <PrimaryButton theme={theme} icon={ArrowRight} onClick={() => goto("projects")}>{t.hero.viewProjects}</PrimaryButton>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 24 }}>
+              <PrimaryButton theme={theme} icon={ArrowRight} as={Link} to="/projects">{t.hero.viewProjects}</PrimaryButton>
               <GhostButton theme={theme} icon={Download} onClick={downloadCV}>{t.hero.downloadCV}</GhostButton>
-              <GhostButton theme={theme} icon={Mail} onClick={() => goto("contact")}>{t.hero.contactMe}</GhostButton>
+              <GhostButton theme={theme} icon={Mail} as={Link} to="/contact">{t.hero.contactMe}</GhostButton>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               {[
@@ -836,16 +924,21 @@ function HomeView({ theme, t, lang, settings, goto, showToast }) {
           </div>
 
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <div style={{ position: "relative", width: 220, height: 220 }}>
+            <div style={{ position: "relative", width: 240, height: 240 }}>
               <div style={{
                 position: "absolute", inset: 0, borderRadius: "50%",
-                background: `conic-gradient(${theme.accent}, ${theme.accent2}, ${theme.accent})`, padding: 4,
+                background: `conic-gradient(${theme.accent}, ${theme.accent3}, ${theme.accent2}, ${theme.accent})`, padding: 4,
               }}>
                 <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: theme.panelSolid, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 56, color: theme.text }}>PM</span>
+                  <span style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 60, color: theme.text }}>PM</span>
                 </div>
               </div>
-              <div style={{ position: "absolute", top: -6, right: -6, width: 22, height: 22, borderRadius: "50%", background: theme.accent2, border: `3px solid ${theme.panelSolid}` }} />
+              <div style={{ position: "absolute", top: -4, right: 6, width: 40, height: 40, borderRadius: 12, background: theme.panelSolid, border: `1px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: theme.shadow }}>
+                <Zap size={18} color={theme.accent} />
+              </div>
+              <div style={{ position: "absolute", bottom: 8, left: -14, width: 40, height: 40, borderRadius: 12, background: theme.panelSolid, border: `1px solid ${theme.border}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: theme.shadow }}>
+                <Award size={18} color={theme.accent2} />
+              </div>
             </div>
           </div>
         </div>
@@ -858,62 +951,89 @@ function HomeView({ theme, t, lang, settings, goto, showToast }) {
           { label: t.status.clients, value: "15+" },
           { label: t.status.uptime, value: "99%" },
         ].map((s, i) => (
-          <div key={i} style={{ background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 14, padding: "18px 16px", backdropFilter: "blur(16px)" }}>
-            <div style={{ fontFamily: FONT_DISPLAY, fontSize: 28, fontWeight: 700, color: theme.accent }}>{s.value}</div>
-            <div style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: theme.textMuted, marginTop: 2 }}>{s.label}</div>
-          </div>
+          <Reveal key={i} delay={i * 60}>
+            <div style={{ background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 14, padding: "18px 16px", backdropFilter: "blur(16px)" }}>
+              <div style={{ fontFamily: FONT_DISPLAY, fontSize: 30, fontWeight: 800, color: theme.accent }}>{s.value}</div>
+              <div style={{ fontFamily: FONT_MONO, fontSize: 11.5, color: theme.textMuted, marginTop: 2 }}>{s.label}</div>
+            </div>
+          </Reveal>
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="two-col">
-        <WindowChrome theme={theme} icon="◆" title={t.about.eyebrow}>
-          <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, margin: "0 0 4px" }}>{t.about.title}</h2>
-          <p style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: theme.accent2, margin: "0 0 14px" }}>{t.about.role}</p>
-          <p style={{ color: theme.textMuted, lineHeight: 1.7, fontSize: 14.5, marginBottom: 12 }}>{settings.about1?.[lang] || t.about.p1}</p>
-          <p style={{ color: theme.textMuted, lineHeight: 1.7, fontSize: 14.5, marginBottom: 16 }}>{settings.about2?.[lang] || t.about.p2}</p>
-          <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "10px 14px", borderRadius: 10, background: theme.inputBg, border: `1px solid ${theme.border}` }}>
-            <User size={15} color={theme.accent} />
-            <span style={{ fontSize: 13.5 }}><strong>{t.about.university}:</strong> Ruaha Catholic University</span>
-          </div>
-        </WindowChrome>
-
-        <WindowChrome theme={theme} icon=">_" title={t.skills.eyebrow}>
-          <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, margin: "0 0 14px" }}>{t.skills.title}</h2>
-          <div style={{ background: "#05070C", borderRadius: 10, padding: 16, fontFamily: FONT_MONO, fontSize: 13, border: `1px solid ${theme.border}` }}>
-            <div style={{ color: theme.accent2, marginBottom: 10 }}>paulo@mkenya:~$ {t.skills.cmd}</div>
-            {Object.entries(SKILLS).map(([key, list]) => (
-              <div key={key} style={{ marginBottom: 6, color: "#C9D1E0" }}>
-                <span style={{ color: theme.accent }}>&gt; {t.skills.categories[key]}:</span> {list.join(", ")}
+      {/* WHY WORK WITH ME */}
+      <Reveal>
+        <WindowChrome theme={theme} icon="★" title={t.why.eyebrow}>
+          <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, margin: "0 0 18px" }}>{t.why.title}</h2>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="three-col">
+            {t.why.items.map((item, i) => (
+              <div key={i} style={{ padding: 16, borderRadius: 12, background: theme.inputBg, border: `1px solid ${theme.border}` }}>
+                <div style={{ width: 34, height: 34, borderRadius: 9, background: `${theme.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
+                  <Sparkles size={16} color={theme.accent} />
+                </div>
+                <div style={{ fontWeight: 700, fontSize: 14.5, marginBottom: 6 }}>{item.t}</div>
+                <div style={{ color: theme.textMuted, fontSize: 13.5, lineHeight: 1.6 }}>{item.d}</div>
               </div>
             ))}
-            <div style={{ color: theme.textFaint, marginTop: 8 }}>paulo@mkenya:~$ <span style={{ opacity: 0.6 }}>▌</span></div>
           </div>
         </WindowChrome>
+      </Reveal>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }} className="two-col">
+        <Reveal>
+          <WindowChrome theme={theme} icon="◆" title={t.about.eyebrow}>
+            <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, margin: "0 0 4px" }}>{t.about.title}</h2>
+            <p style={{ fontFamily: FONT_MONO, fontSize: 12.5, color: theme.accent2, margin: "0 0 14px" }}>{t.about.role}</p>
+            <p style={{ color: theme.textMuted, lineHeight: 1.7, fontSize: 14.5, marginBottom: 12 }}>{settings.about1?.[lang] || t.about.p1}</p>
+            <p style={{ color: theme.textMuted, lineHeight: 1.7, fontSize: 14.5, marginBottom: 16 }}>{settings.about2?.[lang] || t.about.p2}</p>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "10px 14px", borderRadius: 10, background: theme.inputBg, border: `1px solid ${theme.border}` }}>
+              <User size={15} color={theme.accent} />
+              <span style={{ fontSize: 13.5 }}><strong>{t.about.university}:</strong> Ruaha Catholic University</span>
+            </div>
+          </WindowChrome>
+        </Reveal>
+
+        <Reveal delay={80}>
+          <WindowChrome theme={theme} icon=">_" title={t.skills.eyebrow}>
+            <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, margin: "0 0 14px" }}>{t.skills.title}</h2>
+            <div style={{ background: "#05070C", borderRadius: 10, padding: 16, fontFamily: FONT_MONO, fontSize: 13, border: `1px solid ${theme.border}` }}>
+              <div style={{ color: theme.accent2, marginBottom: 10 }}>paulo@mkenya:~$ {t.skills.cmd}</div>
+              {Object.entries(SKILLS).map(([key, list]) => (
+                <div key={key} style={{ marginBottom: 6, color: "#C9D1E0" }}>
+                  <span style={{ color: theme.accent }}>&gt; {t.skills.categories[key]}:</span> {list.join(", ")}
+                </div>
+              ))}
+              <div style={{ color: theme.textFaint, marginTop: 8 }}>paulo@mkenya:~$ <span style={{ opacity: 0.6 }}>▌</span></div>
+            </div>
+          </WindowChrome>
+        </Reveal>
       </div>
 
-      <WindowChrome theme={theme} icon="⏱" title={t.journey.eyebrow}>
-        <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, margin: "0 0 18px" }}>{t.journey.title}</h2>
-        <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-          {JOURNEY.map((j, i) => (
-            <div key={i} style={{ display: "flex", gap: 16 }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{ width: 10, height: 10, borderRadius: "50%", background: i === JOURNEY.length - 1 ? theme.accent : theme.textFaint, flexShrink: 0, marginTop: 4 }} />
-                {i < JOURNEY.length - 1 && <div style={{ width: 2, flex: 1, background: theme.border, marginTop: 2 }} />}
+      <Reveal>
+        <WindowChrome theme={theme} icon="⏱" title={t.journey.eyebrow}>
+          <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, fontWeight: 700, margin: "0 0 18px" }}>{t.journey.title}</h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+            {JOURNEY.map((j, i) => (
+              <div key={i} style={{ display: "flex", gap: 16 }}>
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <div style={{ width: 10, height: 10, borderRadius: "50%", background: i === JOURNEY.length - 1 ? theme.accent : theme.textFaint, flexShrink: 0, marginTop: 4 }} />
+                  {i < JOURNEY.length - 1 && <div style={{ width: 2, flex: 1, background: theme.border, marginTop: 2 }} />}
+                </div>
+                <div style={{ paddingBottom: 22 }}>
+                  <div style={{ fontFamily: FONT_MONO, fontWeight: 700, color: theme.accent, fontSize: 13.5 }}>{j.year}</div>
+                  <div style={{ color: theme.textMuted, fontSize: 14.5, lineHeight: 1.6, marginTop: 2 }}>{j[lang]}</div>
+                </div>
               </div>
-              <div style={{ paddingBottom: 22 }}>
-                <div style={{ fontFamily: FONT_MONO, fontWeight: 700, color: theme.accent, fontSize: 13.5 }}>{j.year}</div>
-                <div style={{ color: theme.textMuted, fontSize: 14.5, lineHeight: 1.6, marginTop: 2 }}>{j[lang]}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </WindowChrome>
+            ))}
+          </div>
+        </WindowChrome>
+      </Reveal>
 
       <style>{`
         @media (max-width: 860px) {
           .hero-grid { grid-template-columns: 1fr !important; }
           .status-grid { grid-template-columns: repeat(2,1fr) !important; }
           .two-col { grid-template-columns: 1fr !important; }
+          .three-col { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
@@ -936,8 +1056,9 @@ function ProjectsView({ theme, t, lang, projects, showToast }) {
 
   return (
     <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <Seo title={`${t.projectsPage.title} — Paulo Mkenya`} description={t.projectsPage.subtitle} />
       <WindowChrome theme={theme} icon="/" title={t.projectsPage.eyebrow}>
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 30, fontWeight: 700, margin: "0 0 6px" }}>{t.projectsPage.title}</h1>
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 32, fontWeight: 800, margin: "0 0 6px" }}>{t.projectsPage.title}</h1>
         <p style={{ color: theme.textMuted, marginBottom: 20 }}>{t.projectsPage.subtitle}</p>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ display: "flex", gap: 8 }}>
@@ -955,44 +1076,47 @@ function ProjectsView({ theme, t, lang, projects, showToast }) {
       </WindowChrome>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }} className="proj-grid">
-        {filtered.map((p) => {
+        {filtered.map((p, i) => {
           const title = lang === "sw" ? p.title_sw : p.title_en;
           const desc = lang === "sw" ? p.desc_sw : p.desc_en;
           const color = p.category === "Web" ? theme.accent : theme.accent2;
           return (
-            <div key={p.id} style={{ background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", backdropFilter: "blur(16px)" }}>
-              <div style={{ padding: "10px 14px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.08)" }}>
-                <div style={{ display: "flex", gap: 5 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: 99, background: "#EF5D57" }} />
-                  <span style={{ width: 8, height: 8, borderRadius: 99, background: "#F6BE4F" }} />
-                  <span style={{ width: 8, height: 8, borderRadius: 99, background: "#61C454" }} />
+            <Reveal key={p.id} delay={(i % 6) * 60}>
+              <div style={{ background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 16, overflow: "hidden", display: "flex", flexDirection: "column", backdropFilter: "blur(16px)", height: "100%" }}>
+                <div style={{ padding: "10px 14px", borderBottom: `1px solid ${theme.border}`, display: "flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,0.08)" }}>
+                  <div style={{ display: "flex", gap: 5 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 99, background: "#EF5D57" }} />
+                    <span style={{ width: 8, height: 8, borderRadius: 99, background: "#F6BE4F" }} />
+                    <span style={{ width: 8, height: 8, borderRadius: 99, background: "#61C454" }} />
+                  </div>
+                  <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: theme.textFaint, marginLeft: 2 }}>{p.icon}.sys</span>
                 </div>
-                <span style={{ fontFamily: FONT_MONO, fontSize: 10.5, color: theme.textFaint, marginLeft: 2 }}>{p.icon}.sys</span>
-              </div>
-              <div style={{ padding: 18, display: "flex", flexDirection: "column", flex: 1 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                  <ProjectGlyph icon={p.icon} color={color} />
-                  <div>
-                    <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 15.5, lineHeight: 1.2 }}>{title}</div>
-                    <Chip theme={theme} small tone={p.category === "Web" ? "accent" : "accent2"} active>{p.category}</Chip>
+                <ProjectMockup theme={theme} color={color} icon={p.icon} />
+                <div style={{ padding: 18, display: "flex", flexDirection: "column", flex: 1, borderTop: `1px solid ${theme.border}` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <ProjectGlyph icon={p.icon} color={color} />
+                    <div>
+                      <div style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 15.5, lineHeight: 1.2 }}>{title}</div>
+                      <Chip theme={theme} small tone={p.category === "Web" ? "accent" : "accent2"} active>{p.category}</Chip>
+                    </div>
+                  </div>
+                  <p style={{ color: theme.textMuted, fontSize: 13.5, lineHeight: 1.6, flex: 1, marginBottom: 14 }}>{desc}</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+                    {(p.tech || []).map((tc) => (
+                      <span key={tc} style={{ fontFamily: FONT_MONO, fontSize: 10.5, padding: "3px 8px", borderRadius: 6, background: theme.inputBg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>{tc}</span>
+                    ))}
+                  </div>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <a href={p.github || "#"} onClick={!p.github ? noLink : undefined} target={p.github ? "_blank" : undefined} rel="noreferrer" style={{ flex: 1 }}>
+                      <GhostButton theme={theme} icon={Github} full>{t.projectsPage.code}</GhostButton>
+                    </a>
+                    <a href={p.live || "#"} onClick={!p.live ? noLink : undefined} target={p.live ? "_blank" : undefined} rel="noreferrer" style={{ flex: 1 }}>
+                      <PrimaryButton theme={theme} icon={ExternalLink} full>{t.projectsPage.live}</PrimaryButton>
+                    </a>
                   </div>
                 </div>
-                <p style={{ color: theme.textMuted, fontSize: 13.5, lineHeight: 1.6, flex: 1, marginBottom: 14 }}>{desc}</p>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-                  {(p.tech || []).map((tc) => (
-                    <span key={tc} style={{ fontFamily: FONT_MONO, fontSize: 10.5, padding: "3px 8px", borderRadius: 6, background: theme.inputBg, color: theme.textMuted, border: `1px solid ${theme.border}` }}>{tc}</span>
-                  ))}
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <a href={p.github || "#"} onClick={!p.github ? noLink : undefined} target={p.github ? "_blank" : undefined} rel="noreferrer" style={{ flex: 1 }}>
-                    <GhostButton theme={theme} icon={Github} full>{t.projectsPage.code}</GhostButton>
-                  </a>
-                  <a href={p.live || "#"} onClick={!p.live ? noLink : undefined} target={p.live ? "_blank" : undefined} rel="noreferrer" style={{ flex: 1 }}>
-                    <PrimaryButton theme={theme} icon={ExternalLink} full>{t.projectsPage.live}</PrimaryButton>
-                  </a>
-                </div>
               </div>
-            </div>
+            </Reveal>
           );
         })}
         {filtered.length === 0 && (
@@ -1008,7 +1132,7 @@ function ProjectsView({ theme, t, lang, projects, showToast }) {
 }
 
 /* =================================== BLOG =================================== */
-function BlogListView({ theme, t, lang, posts, onOpen }) {
+function BlogListView({ theme, t, lang, posts }) {
   const [query, setQuery] = useState("");
   const [cat, setCat] = useState("all");
   const published = posts.filter((p) => p.status === "published");
@@ -1021,8 +1145,9 @@ function BlogListView({ theme, t, lang, posts, onOpen }) {
 
   return (
     <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <Seo title={`${t.blogPage.title} — Paulo Mkenya`} description={t.blogPage.subtitle} />
       <WindowChrome theme={theme} icon="/" title={t.blogPage.eyebrow}>
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 30, fontWeight: 700, margin: "0 0 6px" }}>{t.blogPage.title}</h1>
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 32, fontWeight: 800, margin: "0 0 6px" }}>{t.blogPage.title}</h1>
         <p style={{ color: theme.textMuted, marginBottom: 18 }}>{t.blogPage.subtitle}</p>
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "space-between" }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -1040,23 +1165,25 @@ function BlogListView({ theme, t, lang, posts, onOpen }) {
       </WindowChrome>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 18 }} className="proj-grid">
-        {filtered.map((p) => (
-          <button key={p.id} onClick={() => onOpen(p.id)} style={{
-            textAlign: "left", background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 16,
-            overflow: "hidden", cursor: "pointer", display: "flex", flexDirection: "column", backdropFilter: "blur(16px)",
-          }}>
-            <div style={{ height: 90, background: `linear-gradient(135deg, ${p.color}, ${theme.bg})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <FileText color="#fff" size={28} opacity={0.85} />
-            </div>
-            <div style={{ padding: 16 }}>
-              <Chip theme={theme} small tone="accent2" active>{p.category}</Chip>
-              <h3 style={{ fontFamily: FONT_DISPLAY, fontSize: 16.5, fontWeight: 700, margin: "10px 0 6px" }}>{p.title}</h3>
-              <p style={{ color: theme.textMuted, fontSize: 13.5, lineHeight: 1.6, marginBottom: 10 }}>{p.excerpt}</p>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: FONT_MONO, fontSize: 11, color: theme.textFaint }}>
-                <Calendar size={12} /> {p.date} <span>•</span> {Math.max(1, Math.round((p.content || "").length / 800))} {t.blogPage.minRead}
+        {filtered.map((p, i) => (
+          <Reveal key={p.id} delay={(i % 6) * 60}>
+            <Link to={`/blog/${p.id}`} style={{
+              textAlign: "left", background: theme.panel, border: `1px solid ${theme.border}`, borderRadius: 16,
+              overflow: "hidden", cursor: "pointer", display: "flex", flexDirection: "column", backdropFilter: "blur(16px)",
+            }}>
+              <div style={{ height: 96, background: `linear-gradient(135deg, ${p.color}, ${theme.bg})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <FileText color="#fff" size={28} opacity={0.85} />
               </div>
-            </div>
-          </button>
+              <div style={{ padding: 16 }}>
+                <Chip theme={theme} small tone="accent2" active>{p.category}</Chip>
+                <h3 style={{ fontFamily: FONT_DISPLAY, fontSize: 16.5, fontWeight: 700, margin: "10px 0 6px" }}>{p.title}</h3>
+                <p style={{ color: theme.textMuted, fontSize: 13.5, lineHeight: 1.6, marginBottom: 10 }}>{p.excerpt}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: FONT_MONO, fontSize: 11, color: theme.textFaint }}>
+                  <Calendar size={12} /> {p.date} <span>•</span> {Math.max(1, Math.round((p.content || "").length / 800))} {t.blogPage.minRead}
+                </div>
+              </div>
+            </Link>
+          </Reveal>
         ))}
         {filtered.length === 0 && <div style={{ gridColumn: "1/-1", textAlign: "center", padding: 40, color: theme.textMuted }}>{t.blogPage.noPosts}</div>}
       </div>
@@ -1064,29 +1191,32 @@ function BlogListView({ theme, t, lang, posts, onOpen }) {
   );
 }
 
-function BlogPostView({ theme, t, lang, posts, addComment, postId, onBack }) {
-  const post = posts.find((p) => p.id === postId);
+function BlogPostView({ theme, t, lang, posts, addComment }) {
+  const { id } = useParams();
+  const post = posts.find((p) => String(p.id) === String(id));
   const [name, setName] = useState("");
   const [comment, setComment] = useState("");
-  if (!post) return null;
+
+  if (!post) return <NotFound theme={theme} lang={lang} />;
 
   const submitComment = () => {
     if (!name.trim() || !comment.trim()) return;
-    addComment(postId, name.trim(), comment.trim());
+    addComment(post.id, name.trim(), comment.trim());
     setName(""); setComment("");
   };
 
   return (
     <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      <button onClick={onBack} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", cursor: "pointer", color: theme.accent, fontFamily: FONT_MONO, fontSize: 13, width: "fit-content" }}>
+      <Seo title={`${post.title} — Paulo Mkenya`} description={post.excerpt} />
+      <Link to="/blog" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: theme.accent, fontFamily: FONT_MONO, fontSize: 13, width: "fit-content" }}>
         <ArrowLeft size={15} /> {t.blogPage.back}
-      </button>
+      </Link>
       <WindowChrome theme={theme} icon="#" title={post.category}>
-        <div style={{ height: 140, margin: "-20px -20px 20px", background: `linear-gradient(135deg, ${post.color}, ${theme.bg})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ height: 150, margin: "-22px -22px 20px", background: `linear-gradient(135deg, ${post.color}, ${theme.bg})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <FileText color="#fff" size={44} opacity={0.85} />
         </div>
         <Chip theme={theme} small tone="accent2" active>{post.category}</Chip>
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 30, fontWeight: 700, margin: "14px 0 8px" }}>{post.title}</h1>
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 32, fontWeight: 800, margin: "14px 0 8px" }}>{post.title}</h1>
         <div style={{ display: "flex", gap: 12, fontFamily: FONT_MONO, fontSize: 12, color: theme.textFaint, marginBottom: 20 }}>
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}><User size={12} /> Paulo Mkenya</span>
           <span style={{ display: "flex", alignItems: "center", gap: 4 }}><Calendar size={12} /> {post.date}</span>
@@ -1155,8 +1285,9 @@ function ContactView({ theme, t, lang, settings, addMessage, showToast }) {
 
   return (
     <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <Seo title={`${t.contactPage.title} — Paulo Mkenya`} description={t.contactPage.subtitle} />
       <WindowChrome theme={theme} icon="/" title={t.contactPage.eyebrow}>
-        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 30, fontWeight: 700, margin: "0 0 6px" }}>{t.contactPage.title}</h1>
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 32, fontWeight: 800, margin: "0 0 6px" }}>{t.contactPage.title}</h1>
         <p style={{ color: theme.textMuted }}>{t.contactPage.subtitle}</p>
       </WindowChrome>
 
@@ -1224,13 +1355,14 @@ function AdminLogin({ theme, t }) {
     e.preventDefault();
     setBusy(true);
     setErr("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password: p });
+    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password: p });
     setBusy(false);
-    if (error) setErr(t.admin.invalid);
+    if (error) setErr(`${t.admin.invalid} (${error.message})`);
   };
 
   return (
     <div className="fade-in" style={{ maxWidth: 420, margin: "40px auto" }}>
+      <Seo title="Admin" />
       <WindowChrome theme={theme} icon="🔒" title={t.admin.loginEyebrow}>
         <div style={{ textAlign: "center", marginBottom: 20 }}>
           <div style={{ width: 52, height: 52, borderRadius: 14, background: `${theme.accent}22`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
@@ -1274,6 +1406,7 @@ function AdminDashboard({ theme, t, lang, adminTab, setAdminTab, projects, addPr
 
   return (
     <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <Seo title="Admin — Paulo Mkenya" />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
         <div>
           <p style={{ fontFamily: FONT_MONO, fontSize: 12, color: theme.textMuted, margin: 0 }}>{t.admin.welcome},</p>

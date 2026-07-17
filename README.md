@@ -68,6 +68,21 @@ Ukishanunua domain (Namecheap, Cloudflare, n.k.):
 - **Ujumbe wa wateja**: wanapotuma fomu ya Mawasiliano, ujumbe unaingia moja kwa moja kwenye database — utaonekana kwenye tab ya "Ujumbe" ukiwa umeingia kama admin, popote ulipo.
 - **Ukibadilisha msimbo**: `git push` tena — Vercel ita-deploy upya kiotomatiki.
 
+## Utatuzi wa Matatizo (Troubleshooting)
+
+**Admin login inakataa email/password sahihi:**
+- Nenda Supabase → **Authentication → Users** → hakikisha mtumiaji wako ana alama ya "Confirmed" (siyo "Waiting for verification"). Kama hajathibitishwa, futa na umwongeze upya huku ukiwasha **"Auto Confirm User"**.
+- Hakikisha kwenye Vercel uliongeza `VITE_SUPABASE_URL` na `VITE_SUPABASE_ANON_KEY` kwenye **Settings → Environment Variables**, kisha ukafanya **Redeploy** (env variables mpya hazitumiki kwenye deployment za zamani).
+- Fungua DevTools (F12) → Console, jaribu kuingia tena, soma ujumbe kamili wa error unaoonekana.
+
+**Ukisogeza kwenye `/projects` au `/blog` kisha uki-refresh, unapata 404:**
+- Hii inatokea kwenye baadhi ya hosting kama hujaweka faili la `vercel.json` (limejumuishwa humu). Hakikisha faili hilo lipo kwenye mzizi wa mradi wako kabla ya kupakia GitHub, kisha deploy upya.
+
+## Mabadiliko ya Hivi Karibuni
+
+- Kila ukurasa sasa una URL yake halisi (`/`, `/projects`, `/blog`, `/blog/:id`, `/contact`, `/admin`) kwa kutumia React Router — hii inasaidia SEO na kushiriki viungo moja kwa moja.
+- Muonekano umeboreshwa: hero yenye mwanga wa "glow orbs", uhuishaji wa scroll-reveal, kadi za miradi zenye mockup ya dashibodi, na sehemu mpya ya "Kwa Nini Unifanye Kazi Nami".
+
 ## Usalama
 
 - Nenosiri la admin halijawekwa kwenye msimbo — linahifadhiwa salama na Supabase Auth.
