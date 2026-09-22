@@ -1,3 +1,7 @@
+import Navbar from "./components/Navbar";
+import Hero from "./components/Hero";
+import AboutSkills from "./components/AboutSkills";
+import ProjectsGrid from "./components/ProjectsGrid";
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
   BrowserRouter, Routes, Route, Link, useNavigate, useParams, useLocation,
